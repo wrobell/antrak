@@ -1,5 +1,6 @@
 #!/bin/sh
 
+psql -f db/geo.sql $1
 psql -f db/schema/position.sql $1
 psql -f db/schema/category.sql $1
 
