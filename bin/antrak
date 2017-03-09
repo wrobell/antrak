@@ -21,6 +21,7 @@
 import asyncio
 import argparse
 import logging
+from antrak.util import flatten
 
 def common_args(parser):
     """
@@ -59,11 +60,8 @@ else:
     logging.basicConfig(level=logging.WARN)
 
 if args.subcmd == 'import':
-    import itertools
     from antrak.nmea import parse_points
     from antrak.db import save_pos
-
-    flatten = itertools.chain.from_iterable
 
     data = flatten(parse_points(open(fn)) for fn in args.files)
 
