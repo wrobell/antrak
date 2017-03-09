@@ -6,8 +6,13 @@ soon.
 Requirements
 
 - Python 3.6
-- Shapely
-- wkbheader
-- pynmea2
+- PostgreSQL 9.6
+- PostGIS 2.3
+- Python modules
+
+  - Shapely
+  - wkbheader
+  - pynmea2
+  - asyncpg
 
 The software is distributed under GPL v3 licence.
