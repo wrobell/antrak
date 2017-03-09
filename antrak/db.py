@@ -64,7 +64,11 @@ async def save_pos(dev, data):
     :param data: Collection of positions to be saved in a database.
     """
     global conn
+
     data = ((dev, p.properties['timestamp'], p) for p in data)
+
+    logger.debug('saving positions')
     await conn.executemany(SQL_SAVE_POINT, data)
+    logger.debug('positions saved'.format(n))
 
 # vim: sw=4:et:ai

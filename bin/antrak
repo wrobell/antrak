@@ -54,10 +54,11 @@ c_subp.add_argument(
 
 args = parser.parse_args()
 
-if args.verbose:
-    logging.basicConfig(level=logging.DEBUG)
-else:
-    logging.basicConfig(level=logging.WARN)
+logger = logging.getLogger('antrak')
+level = logging.DEBUG if args.verbose else logging.WARN
+fmt = '%(asctime)s:%(levelname)s:%(name)s:%(thread)s:%(message)s'
+logging.basicConfig(format=fmt)
+logger.setLevel(level)
 
 if args.subcmd == 'import':
     from antrak.nmea import parse_points
