@@ -3,4 +3,11 @@ AnTrak is activity and location data analysis tool.
 Look into doc directory, implement ideas, experiment, do not expect release
 soon.
 
+Requirements
+
+- Python 3.6
+- Shapely
+- wkbheader
+- pynmea2
+
 The software is distributed under GPL v3 licence.
