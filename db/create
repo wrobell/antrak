@@ -2,6 +2,7 @@
 
 psql -f db/geo.sql $1
 psql -f db/schema/position.sql $1
+psql -f db/schema/track.sql $1
 psql -f db/schema/category.sql $1
 
 # vim: sw=4:et:ai

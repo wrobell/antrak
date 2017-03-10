@@ -42,15 +42,26 @@ parser.add_argument(
     '-v', '--verbose', action='store_true', dest='verbose', default=False,
     help='explain what is being done'
 )
-m_subp = parser.add_subparsers(dest='subcmd')
+main_parser = parser.add_subparsers(dest='subcmd')
 
 # command: import
-c_subp = m_subp.add_parser('import')
-common_args(c_subp)
-c_subp.add_argument(
+sub_parser = main_parser.add_parser('import')
+common_args(sub_parser)
+sub_parser.add_argument(
     'files', nargs='+',
     help='Files containing GPS positions (NMEA format)'
 )
+
+# command: track
+sub_parser_track = main_parser.add_parser('track').add_subparsers(dest='subcmd')
+
+# command: track add
+# add or update track
+sub_parser = sub_parser_track.add_parser('set')
+sub_parser.add_argument('trip', help='trip name')
+sub_parser.add_argument('name', help='track name')
+sub_parser.add_argument('start', help='track start time')
+sub_parser.add_argument('end', nargs='?', help='track end time')
 
 args = parser.parse_args()
 
@@ -65,9 +76,22 @@ if args.subcmd == 'import':
     from antrak.db import save_pos
 
     data = flatten(parse_points(open(fn)) for fn in args.files)
-
-    loop = asyncio.get_event_loop()
     task = save_pos(args.device, data)
-    loop.run_until_complete(task)
+elif args.subcmd == 'set':
+    from antrak.db import track_add, track_find_period
+    from dateutil.parser import parse as date_parse
+    dev = 'default'  # FIXME: args.dev
+
+    start = date_parse(args.start)
+    end = date_parse(args.end) if args.end else start
+
+    async def track_add_(dev, trip, name, start, end):
+        start, end = await track_find_period(dev, start, end)
+        task = await track_add(dev, trip, name, start, end)
+
+    task = track_add_(dev, args.trip, args.name, start, end)
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(task)
 
 # vim: sw=4:et:ai

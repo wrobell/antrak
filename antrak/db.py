@@ -52,7 +52,7 @@ def tx(f):
             'geometry', encoder=to_wkb, decoder=from_wkb, binary=True
         )
         async with conn.transaction():
-            await f(*args, **kw)
+            return (await f(*args, **kw))
     return execute
 
 @tx
@@ -69,6 +69,30 @@ async def save_pos(dev, data):
 
     logger.debug('saving positions')
     await conn.executemany(SQL_SAVE_POINT, data)
-    logger.debug('positions saved'.format(n))
+    logger.debug('positions saved')
+
+@tx
+async def track_find_period(dev, start, end):
+    global conn
+    SQL_FIND_TRACK_PERIOD = """
+select min(timestamp), max(timestamp)
+from position
+where device = $1 and timestamp between $2 and $3
+"""
+    data = await conn.fetch(SQL_FIND_TRACK_PERIOD, dev, start, end)
+    return data[0]
+
+@tx
+async def track_add(dev, trip, name, start, end):
+    global conn
+
+    logger.debug('saving trip {} - {} from {} to {} (device={})'.format(
+        trip, name, start, end, dev
+    ))
+    SQL_ADD_TRACK = """
+insert into track (trip, name, device, start, "end")
+values ($1, $2, $3, $4, $5)
+"""
+    await conn.execute(SQL_ADD_TRACK, trip, name, dev, start, end)
 
 # vim: sw=4:et:ai
