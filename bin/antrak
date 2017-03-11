@@ -55,13 +55,21 @@ sub_parser.add_argument(
 # command: track
 sub_parser_track = main_parser.add_parser('track').add_subparsers(dest='subcmd')
 
-# command: track add
+# command: track set
 # add or update track
 sub_parser = sub_parser_track.add_parser('set')
 sub_parser.add_argument('trip', help='trip name')
 sub_parser.add_argument('name', help='track name')
 sub_parser.add_argument('start', help='track start time')
 sub_parser.add_argument('end', nargs='?', help='track end time')
+
+# command: report
+sub_parser_report = main_parser.add_parser('report').add_subparsers(dest='subcmd')
+
+# command: report stats
+# add or update track
+sub_parser = sub_parser_report.add_parser('stats')
+sub_parser.add_argument('trip', help='trip name')
 
 args = parser.parse_args()
 
@@ -77,7 +85,8 @@ if args.subcmd == 'import':
 
     data = flatten(parse_points(open(fn)) for fn in args.files)
     task = save_pos(args.device, data)
-elif args.subcmd == 'set':
+
+elif args.subcmd == 'set':  # track set
     from antrak.db import tx, track_add, track_find_period
     from dateutil.parser import parse as date_parse
     dev = 'default'  # FIXME: args.dev
@@ -91,6 +100,36 @@ elif args.subcmd == 'set':
         task = await track_add(dev, trip, name, start, end)
 
     task = track_add_(dev, args.trip, args.name, start, end)
+
+elif args.subcmd == 'stats':  # report stats
+    from antrak.db import track_summary
+    from datetime import timedelta
+
+    dev = 'default'
+
+    fmt = ' {:%Y-%m-%d} {:%H:%M:%S} {:%H:%M:%S}  {}  {}  {} km  {} km/h'.format
+
+    async def report_stats(dev, trip):
+        data = await track_summary(dev, trip)
+        started = True
+        for item in data:
+            if started:
+                print(item['trip'])
+            started = False
+
+            duration = timedelta(seconds=item['duration'])
+            distance = round(item['distance'] / 1000)
+            max_speed = round(item['max_speed'])
+
+            s = fmt(
+                item['start'], item['start'], item['end'],
+                item['name'],
+                duration, distance,
+                max_speed
+            )
+            print(s)
+
+    task = report_stats(dev, args.trip)
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(task)
