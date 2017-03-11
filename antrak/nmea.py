@@ -24,7 +24,6 @@ NMEA format parsing functions.
 import itertools
 import logging
 import pynmea2
-from datetime import datetime
 from shapely.geometry import Point
 
 logger = logging.getLogger(__name__)
@@ -52,7 +51,7 @@ def to_point(item):
 
     p = Point(rmc.longitude, rmc.latitude, gga.altitude)
     p.properties = {}
-    p.properties['timestamp'] = datetime.combine(rmc.datestamp, rmc.timestamp)
+    p.properties['timestamp'] = rmc.datetime
     p.properties['heading'] = vtg.true_track
     p.properties['speed'] = vtg.spd_over_grnd_kmph
     return p
