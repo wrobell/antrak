@@ -45,6 +45,7 @@ from track t
         and p.timestamp between t.start and t.end
 where p.device = $1 and t.trip = $2
 group by t.trip, t.name, t.start, t.end
+order by t.trip, t.start
 """
 
 class TxManager:

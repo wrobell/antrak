@@ -107,7 +107,7 @@ elif args.subcmd == 'stats':  # report stats
 
     dev = 'default'
 
-    fmt = ' {:%Y-%m-%d} {:%H:%M:%S} {:%H:%M:%S}  {}  {}  {} km  {} km/h'.format
+    fmt = ' {:%Y-%m-%d} {:%H:%M:%S} {:%H:%M:%S}  {:30}  {}  {} km  {} km/h'.format
 
     async def report_stats(dev, trip):
         data = await track_summary(dev, trip)
