@@ -48,17 +48,13 @@ def to_point(item):
     """
     rmc = item['GPRMC']
     gga = item['GPGGA']
+    vtg = item['GPVTG']
 
-    lat = rmc.latitude
-    lon = rmc.longitude
-    ts = datetime.combine(rmc.datestamp, rmc.timestamp)
-    altitude = gga.altitude
-
-    p = Point(lon, lat, altitude)
+    p = Point(rmc.longitude, rmc.latitude, gga.altitude)
     p.properties = {}
-    p.properties['timestamp'] = ts
-    #p.properties['heading'] = heading
-    #p.properties['speed'] = speed
+    p.properties['timestamp'] = datetime.combine(rmc.datestamp, rmc.timestamp)
+    p.properties['heading'] = vtg.true_track
+    p.properties['speed'] = vtg.spd_over_grnd_kmph
     return p
 
 class Counter:

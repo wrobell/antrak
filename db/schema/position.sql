@@ -2,8 +2,8 @@ drop table if exists position cascade;
 create table position (
     device varchar(10),
     timestamp timestamp,
-    heading float,
-    speed float,
+    heading float not null, -- true, degrees
+    speed float not null,  -- km/h
     primary key (device, timestamp)
 );
 

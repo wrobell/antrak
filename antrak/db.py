@@ -30,8 +30,8 @@ from antrak.util import to_wkb
 logger = logging.getLogger(__name__)
 
 SQL_SAVE_POINT = """
-insert into position (device, timestamp, location)
-values ($1, $2, $3)
+insert into position (device, timestamp, location, heading, speed)
+values ($1, $2, $3, $4, $5)
 """
 
 class TxManager:
@@ -98,7 +98,14 @@ async def save_pos(dev, data):
     """
     global tx
 
-    data = ((dev, p.properties['timestamp'], p) for p in data)
+    extract = lambda p: (
+        dev,
+        p.properties['timestamp'],
+        p,
+        p.properties['heading'],
+        p.properties['speed'],
+    )
+    data = (extract(p) for p in data)
 
     logger.debug('saving positions')
     await tx.conn.executemany(SQL_SAVE_POINT, data)
