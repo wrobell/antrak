@@ -28,32 +28,65 @@ from shapely.wkb import loads as from_wkb
 from antrak.util import to_wkb
 
 logger = logging.getLogger(__name__)
-conn = None  # TODO: use thread local context
 
 SQL_SAVE_POINT = """
 insert into position (device, timestamp, location)
 values ($1, $2, $3)
 """
 
-def tx(f):
+class TxManager:
     """
-    Decorator to connect to a database and execute decorated function
-    within database transaction.
+    Decorative database connection and transaction manager.
+
+    An instance of the class is a decorator. Decorated functions can be
+    called one within each other and they will share the same database
+    connection and transaction.
+
+    :var conn: Database connection.
+    :var dsn: Database connection string.
+    :var _nested: Counter to track nested calls. Close connection when
+        equals to zero.
     """
-    async def execute(*args, **kw):
-        # TODO:
-        # - set to null after use
-        # - reuse current connection if exists
-        global conn
+    def __init__(self):
+        self.conn = None
 
         # TODO: remove hardcoding
-        conn = await asyncpg.connect(database='antrak')
-        await conn.set_type_codec(
-            'geometry', encoder=to_wkb, decoder=from_wkb, binary=True
-        )
-        async with conn.transaction():
-            return (await f(*args, **kw))
-    return execute
+        self.dsn = 'postgres:antrak'
+        self._nested = 0
+
+    def __call__(self, f):
+        """
+        Decorator to connect to a database and execute decorated function
+        within database transaction.
+        """
+        async def execute(*args, **kw):
+            try:
+                self._nested += 1
+                if self.conn is None:
+                    logger.debug('create db connection')
+                    self.conn = await asyncpg.connect(self.dsn)
+                    await self.conn.set_type_codec(
+                        'geometry', encoder=to_wkb, decoder=from_wkb, binary=True
+                    )
+                else:
+                    logger.debug('reusing db connection')
+
+                async with self.conn.transaction():
+                    return (await f(*args, **kw))
+            finally:
+                self._nested -= 1
+                if self.conn and self._nested == 0:
+                    logger.debug('closing connection')
+                    await self.conn.close()
+                    self.conn = None
+
+                assert self._nested >= 0 and (
+                    self.conn and self._nested > 0
+                    or not self.conn and self._nested == 0 
+                ), (self.conn, self._nested)
+        return execute
+
+tx = TxManager()  # TODO: use thread local context
 
 @tx
 async def save_pos(dev, data):
@@ -63,28 +96,28 @@ async def save_pos(dev, data):
     :param dev: Device from which positions where obtained.
     :param data: Collection of positions to be saved in a database.
     """
-    global conn
+    global tx
 
     data = ((dev, p.properties['timestamp'], p) for p in data)
 
     logger.debug('saving positions')
-    await conn.executemany(SQL_SAVE_POINT, data)
+    await tx.conn.executemany(SQL_SAVE_POINT, data)
     logger.debug('positions saved')
 
 @tx
 async def track_find_period(dev, start, end):
-    global conn
+    global tx
     SQL_FIND_TRACK_PERIOD = """
 select min(timestamp), max(timestamp)
 from position
 where device = $1 and timestamp between $2 and $3
 """
-    data = await conn.fetch(SQL_FIND_TRACK_PERIOD, dev, start, end)
+    data = await tx.conn.fetch(SQL_FIND_TRACK_PERIOD, dev, start, end)
     return data[0]
 
 @tx
 async def track_add(dev, trip, name, start, end):
-    global conn
+    global tx
 
     logger.debug('saving trip {} - {} from {} to {} (device={})'.format(
         trip, name, start, end, dev
@@ -93,6 +126,6 @@ async def track_add(dev, trip, name, start, end):
 insert into track (trip, name, device, start, "end")
 values ($1, $2, $3, $4, $5)
 """
-    await conn.execute(SQL_ADD_TRACK, trip, name, dev, start, end)
+    await tx.conn.execute(SQL_ADD_TRACK, trip, name, dev, start, end)
 
 # vim: sw=4:et:ai

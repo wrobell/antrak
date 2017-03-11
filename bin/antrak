@@ -78,13 +78,14 @@ if args.subcmd == 'import':
     data = flatten(parse_points(open(fn)) for fn in args.files)
     task = save_pos(args.device, data)
 elif args.subcmd == 'set':
-    from antrak.db import track_add, track_find_period
+    from antrak.db import tx, track_add, track_find_period
     from dateutil.parser import parse as date_parse
     dev = 'default'  # FIXME: args.dev
 
     start = date_parse(args.start)
     end = date_parse(args.end) if args.end else start
 
+    @tx
     async def track_add_(dev, trip, name, start, end):
         start, end = await track_find_period(dev, start, end)
         task = await track_add(dev, trip, name, start, end)
