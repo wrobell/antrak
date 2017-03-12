@@ -34,6 +34,17 @@ insert into position (device, timestamp, location, heading, speed)
 values ($1, $2, $3, $4, $5)
 """
 
+SQL_FIND_TRACK_PERIOD = """
+select min(timestamp), max(timestamp)
+from position
+where device = $1 and timestamp between $2 and $3
+"""
+
+SQL_ADD_TRACK = """
+insert into track (trip, name, device, start, "end")
+values ($1, $2, $3, $4, $5)
+"""
+
 SQL_TRACK_SUMMARY = """
 select t.trip, t.name, t.start, t.end,
     extract('epoch' from t.end - t.start) as duration, -- duration in seconds
@@ -128,11 +139,7 @@ async def save_pos(dev, data):
 @tx
 async def track_find_period(dev, start, end):
     global tx
-    SQL_FIND_TRACK_PERIOD = """
-select min(timestamp), max(timestamp)
-from position
-where device = $1 and timestamp between $2 and $3
-"""
+
     data = await tx.conn.fetch(SQL_FIND_TRACK_PERIOD, dev, start, end)
     return data[0]
 
@@ -143,10 +150,6 @@ async def track_add(dev, trip, name, start, end):
     logger.debug('saving trip {} - {} from {} to {} (device={})'.format(
         trip, name, start, end, dev
     ))
-    SQL_ADD_TRACK = """
-insert into track (trip, name, device, start, "end")
-values ($1, $2, $3, $4, $5)
-"""
     await tx.conn.execute(SQL_ADD_TRACK, trip, name, dev, start, end)
 
 @tx
