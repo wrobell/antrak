@@ -18,7 +18,7 @@
 #
 
 """
-NMEA format parsing functions.
+Parsing of GPS positions stored in NMEA format.
 """
 
 import itertools
@@ -29,9 +29,9 @@ from shapely.geometry import Point
 
 logger = logging.getLogger(__name__)
 
-def parse_points(f):
+def parse_pos(f):
     """
-    Read points from file-like object serving NMEA sentences. 
+    Read GPS positions from file-like object serving NMEA sentences. 
     """
     counter = Counter()
     data = (pynmea2.parse(line) for line in f)
@@ -40,11 +40,11 @@ def parse_points(f):
         {v.identifier()[:-1]: v for v in items}
         for _, items in data
     )
-    return (to_point(v) for v in data)
+    return (to_pos(v) for v in data)
 
-def to_point(item):
+def to_pos(item):
     """
-    Convert dictionary of NMEA sentences into point objects.
+    Convert dictionary of NMEA sentences into position objects.
     """
     rmc = item['GPRMC']
     gga = item['GPGGA']
