@@ -23,41 +23,11 @@ Database functions.
 
 import asyncpg
 import logging
-from shapely.wkb import loads as from_wkb
 
+from shapely.wkb import loads as from_wkb
 from antrak.util import to_wkb
 
 logger = logging.getLogger(__name__)
-
-SQL_SAVE_POINT = """
-insert into position (device, timestamp, location, heading, speed)
-values ($1, $2, $3, $4, $5)
-"""
-
-SQL_FIND_TRACK_PERIOD = """
-select min(timestamp), max(timestamp)
-from position
-where device = $1 and timestamp between $2 and $3
-"""
-
-SQL_ADD_TRACK = """
-insert into track (trip, name, device, start, "end")
-values ($1, $2, $3, $4, $5)
-"""
-
-SQL_TRACK_SUMMARY = """
-select t.trip, t.name, t.start, t.end,
-    extract('epoch' from t.end - t.start) as duration, -- duration in seconds
-    -- FIXME: what is best tolerance value for wgs84?
-    st_length(st_simplify(st_makeline(p.location), 0.000300), false) as distance, -- length in meters
-    max(speed) as max_speed
-from track t
-    inner join position p on t.device = p.device
-        and p.timestamp between t.start and t.end
-where p.device = $1 and t.trip = $2
-group by t.trip, t.name, t.start, t.end
-order by t.trip, t.start
-"""
 
 class TxManager:
     """
@@ -112,50 +82,5 @@ class TxManager:
         return execute
 
 tx = TxManager()  # TODO: use thread local context
-
-@tx
-async def save_pos(dev, data):
-    """
-    Save positions to a database.
-
-    :param dev: Device from which positions where obtained.
-    :param data: Collection of positions to be saved in a database.
-    """
-    global tx
-
-    extract = lambda p: (
-        dev,
-        p.properties['timestamp'],
-        p,
-        p.properties['heading'],
-        p.properties['speed'],
-    )
-    data = (extract(p) for p in data)
-
-    logger.debug('saving positions')
-    await tx.conn.executemany(SQL_SAVE_POINT, data)
-    logger.debug('positions saved')
-
-@tx
-async def track_find_period(dev, start, end):
-    global tx
-
-    data = await tx.conn.fetch(SQL_FIND_TRACK_PERIOD, dev, start, end)
-    return data[0]
-
-@tx
-async def track_add(dev, trip, name, start, end):
-    global tx
-
-    logger.debug('saving trip {} - {} from {} to {} (device={})'.format(
-        trip, name, start, end, dev
-    ))
-    await tx.conn.execute(SQL_ADD_TRACK, trip, name, dev, start, end)
-
-@tx
-async def track_summary(dev, trip):
-    global tx
-
-    return (await tx.conn.fetch(SQL_TRACK_SUMMARY, dev, trip))
 
 # vim: sw=4:et:ai

@@ -21,7 +21,10 @@
 import asyncio
 import argparse
 import logging
-from antrak.util import flatten
+from dateutil.parser import parse as date_parse
+
+import antrak.bc.track
+import antrak.bc.report
 
 def common_args(parser):
     """
@@ -80,56 +83,18 @@ logging.basicConfig(format=fmt)
 logger.setLevel(level)
 
 if args.subcmd == 'import':
-    from antrak.nmea import parse_points
-    from antrak.db import save_pos
-
-    data = flatten(parse_points(open(fn)) for fn in args.files)
-    task = save_pos(args.device, data)
+    task = antrak.bc.track.save_pos(args.device, args.files)
 
 elif args.subcmd == 'set':  # track set
-    from antrak.db import tx, track_add, track_find_period
-    from dateutil.parser import parse as date_parse
     dev = 'default'  # FIXME: args.dev
 
     start = date_parse(args.start)
     end = date_parse(args.end) if args.end else start
-
-    @tx
-    async def track_add_(dev, trip, name, start, end):
-        start, end = await track_find_period(dev, start, end)
-        task = await track_add(dev, trip, name, start, end)
-
-    task = track_add_(dev, args.trip, args.name, start, end)
+    task = antrak.bc.track.track_set(dev, args.trip, args.name, start, end)
 
 elif args.subcmd == 'stats':  # report stats
-    from antrak.db import track_summary
-    from datetime import timedelta
-
     dev = 'default'
-
-    fmt = ' {:%Y-%m-%d} {:%H:%M:%S} {:%H:%M:%S}  {:30}  {}  {} km  {} km/h'.format
-
-    async def report_stats(dev, trip):
-        data = await track_summary(dev, trip)
-        started = True
-        for item in data:
-            if started:
-                print(item['trip'])
-            started = False
-
-            duration = timedelta(seconds=item['duration'])
-            distance = round(item['distance'] / 1000)
-            max_speed = round(item['max_speed'])
-
-            s = fmt(
-                item['start'], item['start'], item['end'],
-                item['name'],
-                duration, distance,
-                max_speed
-            )
-            print(s)
-
-    task = report_stats(dev, args.trip)
+    task = antrak.bc.report.track_stats(dev, args.trip)
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(task)
