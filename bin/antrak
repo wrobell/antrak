@@ -65,6 +65,7 @@ sub_parser.add_argument('trip', help='trip name')
 sub_parser.add_argument('name', help='track name')
 sub_parser.add_argument('start', help='track start time')
 sub_parser.add_argument('end', nargs='?', help='track end time')
+common_args(sub_parser)
 
 # command: report
 sub_parser_report = main_parser.add_parser('report').add_subparsers(dest='subcmd')
@@ -73,6 +74,7 @@ sub_parser_report = main_parser.add_parser('report').add_subparsers(dest='subcmd
 # add or update track
 sub_parser = sub_parser_report.add_parser('stats')
 sub_parser.add_argument('trip', help='trip name')
+common_args(sub_parser)
 
 args = parser.parse_args()
 
@@ -86,15 +88,15 @@ if args.subcmd == 'import':
     task = antrak.bc.track.save_pos(args.device, args.files)
 
 elif args.subcmd == 'set':  # track set
-    dev = 'default'  # FIXME: args.dev
-
     start = date_parse(args.start)
     end = date_parse(args.end) if args.end else start
-    task = antrak.bc.track.track_set(dev, args.trip, args.name, start, end)
+    task = antrak.bc.track.track_set(
+        args.device, args.trip, args.name, start, end
+    )
 
 elif args.subcmd == 'stats':  # report stats
     dev = 'default'
-    task = antrak.bc.report.track_stats(dev, args.trip)
+    task = antrak.bc.report.track_stats(args.device, args.trip)
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(task)
