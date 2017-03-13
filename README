@@ -14,5 +14,6 @@ Requirements
   - wkbheader
   - pynmea2
   - asyncpg
+  - dateutil
 
 The software is distributed under GPL v3 licence.
