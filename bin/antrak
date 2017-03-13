@@ -32,7 +32,7 @@ def common_args(parser):
     """
     parser.add_argument(
         '-d', '--device', dest='device', default='default',
-        help='location device (i.e. GPS, phone) identifier, default "unknown"'
+        help='location device (i.e. GPS, phone) identifier'
     )
 
 desc = """\
