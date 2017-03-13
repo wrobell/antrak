@@ -58,6 +58,12 @@ sub_parser.add_argument(
 # command: track
 sub_parser_track = main_parser.add_parser('track').add_subparsers(dest='subcmd')
 
+# command: track list
+# search and list tracks
+sub_parser = sub_parser_track.add_parser('list')
+sub_parser.add_argument('query', nargs='?', help='trip and track name query')
+common_args(sub_parser)
+
 # command: track set
 # add or update track
 sub_parser = sub_parser_track.add_parser('set')
@@ -71,7 +77,7 @@ common_args(sub_parser)
 sub_parser_report = main_parser.add_parser('report').add_subparsers(dest='subcmd')
 
 # command: report stats
-# add or update track
+# report basic track statistics
 sub_parser = sub_parser_report.add_parser('stats')
 sub_parser.add_argument('query', help='trip and track name query')
 common_args(sub_parser)
@@ -87,6 +93,9 @@ logger.setLevel(level)
 if args.subcmd == 'import':
     task = antrak.bc.track.save_pos(args.device, args.files)
 
+elif args.subcmd == 'list':  # track list
+    task = antrak.bc.track.track_list(args.device, args.query)
+
 elif args.subcmd == 'set':  # track set
     start = date_parse(args.start)
     end = date_parse(args.end) if args.end else start
@@ -95,7 +104,6 @@ elif args.subcmd == 'set':  # track set
     )
 
 elif args.subcmd == 'stats':  # report stats
-    dev = 'default'
     task = antrak.bc.report.track_stats(args.device, args.query)
 
 loop = asyncio.get_event_loop()

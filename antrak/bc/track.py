@@ -22,6 +22,8 @@ from antrak.db import tx
 from antrak.nmea import parse_points
 from antrak.util import flatten
 
+FMT_TRACK_LIST = '{:%Y-%m-%d} {} {}'.format
+
 @tx
 def save_pos(dev, files):
     data = flatten(parse_points(open(fn)) for fn in files)
@@ -32,6 +34,12 @@ async def track_set(dev, trip, name, start, end):
     start, end = await track_dao.find_period(dev, start, end)
     task = await track_dao.add(dev, trip, name, start, end)
     return task
+
+@tx
+async def track_list(dev, query=''):
+    data = await track_dao.track_list(dev, query=query)
+    for item in data:
+        print(FMT_TRACK_LIST(item['start'], item['trip'], item['name']))
 
 # vim: sw=4:et:ai
 

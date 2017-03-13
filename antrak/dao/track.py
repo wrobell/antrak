@@ -38,6 +38,13 @@ insert into track (trip, name, device, start, "end")
 values ($1, $2, $3, $4, $5)
 """
 
+SQL_TRACK_LIST = """
+select trip, name, start, "end"
+from track
+where device = $1 {}
+order by start, trip, name
+"""
+
 @tx
 async def save_pos(dev, data):
     """
@@ -70,5 +77,17 @@ async def add(dev, trip, name, start, end):
         trip, name, start, end, dev
     ))
     await tx.conn.execute(SQL_ADD_TRACK, trip, name, dev, start, end)
+
+@tx
+async def track_list(dev, query=''):
+    if query:
+        cond = 'and trip || \' \' || name ~* $2'
+        args = dev, query
+    else:
+        cond = ''
+        args = (dev,)
+
+    sql = SQL_TRACK_LIST.format(cond)
+    return (await tx.conn.fetch(sql, *args))
 
 # vim: sw=4:et:ai
