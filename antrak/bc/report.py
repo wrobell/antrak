@@ -23,8 +23,8 @@ from datetime import timedelta
 
 FMT_TRACK_STATS = ' {:%Y-%m-%d} {:%H:%M:%S} {:%H:%M:%S}  {:30}  {}  {} km  {} km/h'.format
 
-async def track_stats(dev, trip):
-    data = await report_dao.track_summary(dev, trip)
+async def track_stats(dev, query):
+    data = await report_dao.track_summary(dev, query)
     data = iter(data)
 
     item = next(data)

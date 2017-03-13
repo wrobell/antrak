@@ -31,13 +31,14 @@ select t.trip, t.name, t.start, t.end,
 from track t
     inner join position p on t.device = p.device
         and p.timestamp between t.start and t.end
-where p.device = $1 and t.trip = $2
+where p.device = $1 and t.trip || ' ' || t.name ~* $2
 group by t.trip, t.name, t.start, t.end
 order by t.trip, t.start
 """
 
 @tx
-async def track_summary(dev, trip):
-    return (await tx.conn.fetch(SQL_TRACK_SUMMARY, dev, trip))
+async def track_summary(dev, query):
+    # TODO: support tsearch optionally
+    return (await tx.conn.fetch(SQL_TRACK_SUMMARY, dev, query))
 
 # vim: sw=4:et:ai

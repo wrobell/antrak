@@ -73,7 +73,7 @@ sub_parser_report = main_parser.add_parser('report').add_subparsers(dest='subcmd
 # command: report stats
 # add or update track
 sub_parser = sub_parser_report.add_parser('stats')
-sub_parser.add_argument('trip', help='trip name')
+sub_parser.add_argument('query', help='trip and track name query')
 common_args(sub_parser)
 
 args = parser.parse_args()
@@ -96,7 +96,7 @@ elif args.subcmd == 'set':  # track set
 
 elif args.subcmd == 'stats':  # report stats
     dev = 'default'
-    task = antrak.bc.report.track_stats(args.device, args.trip)
+    task = antrak.bc.report.track_stats(args.device, args.query)
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(task)
