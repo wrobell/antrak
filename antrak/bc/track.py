@@ -19,14 +19,14 @@
 
 from antrak.dao import track as track_dao
 from antrak.db import tx
-from antrak.nmea import parse_points
+from antrak.nmea import parse_pos
 from antrak.util import flatten
 
 FMT_TRACK_LIST = '{:%Y-%m-%d} {} {}'.format
 
 @tx
 def save_pos(dev, files):
-    data = flatten(parse_points(open(fn)) for fn in files)
+    data = flatten(parse_pos(open(fn)) for fn in files)
     return track_dao.save_pos(dev, data)
 
 @tx

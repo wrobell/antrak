@@ -22,7 +22,7 @@ from antrak.db import tx
 
 logger = logging.getLogger(__name__)
 
-SQL_SAVE_POINT = """
+SQL_SAVE_POS = """
 insert into position (device, timestamp, location, heading, speed)
 values ($1, $2, $3, $4, $5)
 """
@@ -63,7 +63,7 @@ async def save_pos(dev, data):
     data = (extract(p) for p in data)
 
     logger.debug('saving positions')
-    await tx.conn.executemany(SQL_SAVE_POINT, data)
+    await tx.conn.executemany(SQL_SAVE_POS, data)
     logger.debug('positions saved')
 
 @tx
