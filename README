@@ -15,5 +15,6 @@ Requirements
   - pynmea2
   - asyncpg
   - dateutil
+  - geotiler
 
 The software is distributed under GPL v3 licence.

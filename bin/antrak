@@ -20,11 +20,13 @@
 
 import asyncio
 import argparse
+import geotiler
 import logging
 from dateutil.parser import parse as date_parse
 
 import antrak.bc.track
 import antrak.bc.report
+import antrak.bc.map
 
 def common_args(parser):
     """
@@ -82,6 +84,21 @@ sub_parser = sub_parser_report.add_parser('stats')
 sub_parser.add_argument('query', help='trip and track name query')
 common_args(sub_parser)
 
+# command: map
+providers = geotiler.providers()
+sub_parser = main_parser.add_parser('map')
+sub_parser.add_argument(
+    '-p', '--provider', dest='provider', choices=providers, default='osm',
+    help='map provider id'
+)
+sub_parser.add_argument(
+    '-s', '--size', dest='size', nargs=2, type=int, default=(1920, 1080),
+    help='size of map image'
+)
+
+sub_parser.add_argument('query', help='trip and track name query')
+common_args(sub_parser)
+
 args = parser.parse_args()
 
 logger = logging.getLogger('antrak')
@@ -105,6 +122,11 @@ elif args.subcmd == 'set':  # track set
 
 elif args.subcmd == 'stats':  # report stats
     task = antrak.bc.report.track_stats(args.device, args.query)
+
+elif args.subcmd == 'map':
+    task = antrak.bc.map.render(
+        args.device, args.query, args.provider, args.size
+    )
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(task)
