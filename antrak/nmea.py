@@ -46,10 +46,14 @@ def to_pos(item):
     """
     Convert dictionary of NMEA sentences into position objects.
     """
-    rmc = item['GPRMC']
-    gga = item['GPGGA']
-    vtg = item['GPVTG']
-    gsa = item['GPGSA']
+    rmc = item.get('GPRMC')
+    gga = item.get('GPGGA')
+    vtg = item.get('GPVTG')
+    gsa = item.get('GPGSA')
+
+    if not (rmc and gga and vtg and gsa):
+        logger.warning('cannot parse {}'.format(item))
+        return None
     ts = rmc.datetime.replace(tzinfo=timezone.utc)
 
     p = Point(rmc.longitude, rmc.latitude, gga.altitude)

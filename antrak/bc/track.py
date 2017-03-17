@@ -33,18 +33,19 @@ def filter_quality(positions):
     <https://en.wikipedia.org/wiki/Dilution_of_precision_(navigation)>`_.
     """
     return (
-        v for v in positions
-        if v.properties['is_3d']
-            and v.properties['hdop'] < 5
-            and v.properties['vdop'] < 5
-            and v.properties['pdop'] < 5
+        p for p in positions
+        if p.properties['is_3d']
+            and p.properties['hdop'] < 5
+            and p.properties['vdop'] < 5
+            and p.properties['pdop'] < 5
     )
 
 @tx
 def save_pos(dev, files):
-    data = flatten(parse_pos(open(fn)) for fn in files)
-    data = filter_quality(data)
-    return track_dao.save_pos(dev, data)
+    positions = flatten(parse_pos(open(fn)) for fn in files)
+    positions = (p for p in positions if p)
+    positions = filter_quality(positions)
+    return track_dao.save_pos(dev, positions)
 
 @tx
 async def track_set(dev, trip, name, start, end):
