@@ -24,9 +24,26 @@ from antrak.util import flatten
 
 FMT_TRACK_LIST = '{:%Y-%m-%d} {} {}'.format
 
+def filter_quality(positions):
+    """
+    Filter out bad quality positions.
+
+    3D, good positions are kept - for `good` definition see Wikipedia
+    article about `dilution of precision
+    <https://en.wikipedia.org/wiki/Dilution_of_precision_(navigation)>`_.
+    """
+    return (
+        v for v in positions
+        if v.properties['is_3d']
+            and v.properties['hdop'] < 5
+            and v.properties['vdop'] < 5
+            and v.properties['pdop'] < 5
+    )
+
 @tx
 def save_pos(dev, files):
     data = flatten(parse_pos(open(fn)) for fn in files)
+    data = filter_quality(data)
     return track_dao.save_pos(dev, data)
 
 @tx

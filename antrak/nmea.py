@@ -49,6 +49,7 @@ def to_pos(item):
     rmc = item['GPRMC']
     gga = item['GPGGA']
     vtg = item['GPVTG']
+    gsa = item['GPGSA']
     ts = rmc.datetime.replace(tzinfo=timezone.utc)
 
     p = Point(rmc.longitude, rmc.latitude, gga.altitude)
@@ -56,6 +57,11 @@ def to_pos(item):
     p.properties['timestamp'] = ts
     p.properties['heading'] = vtg.true_track
     p.properties['speed'] = vtg.spd_over_grnd_kmph
+    p.properties['is_3d'] = gsa.mode_fix_type == '3'
+    p.properties['hdop'] = float(gsa.hdop)
+    p.properties['vdop'] = float(gsa.vdop)
+    p.properties['pdop'] = float(gsa.pdop)
+
     return p
 
 class Counter:
