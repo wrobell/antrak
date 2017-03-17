@@ -84,9 +84,7 @@ class Counter:
         self.counter = 0
 
     def __call__(self, v):
-        # see https://github.com/Knio/pynmea2/issues/61
-        # if v.identifier() == 'GPRMC':
-        if v.identifier().startswith('GPRMC'):
+        if v.sentence_type == 'RMC':
             self.counter += 1
 
         return self.counter
