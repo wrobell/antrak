@@ -77,7 +77,7 @@ class TxManager:
 
                 assert self._nested >= 0 and (
                     self.conn and self._nested > 0
-                    or not self.conn and self._nested == 0 
+                    or not self.conn and self._nested == 0
                 ), (self.conn, self._nested)
         return execute
 
