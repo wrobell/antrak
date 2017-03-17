@@ -81,7 +81,7 @@ where p.device = ?device and t.trip || ' ' || t.name ~* ?query
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args) == 2)
+if (length(args) == 2) {
     query = args[1]
     output = args[2]
 } else {
