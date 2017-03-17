@@ -54,6 +54,9 @@ def to_pos(item):
     if not (rmc and gga and vtg and gsa):
         logger.warning('cannot parse {}'.format(item))
         return None
+
+    assert rmc.timestamp == gga.timestamp, (rmc, gga)
+
     ts = rmc.datetime.replace(tzinfo=timezone.utc)
 
     p = Point(rmc.longitude, rmc.latitude, gga.altitude)
