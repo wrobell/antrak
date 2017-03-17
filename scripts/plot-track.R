@@ -30,10 +30,10 @@ plot_data <- function(data, lab, smooth=F, ...) {
         data[,1][nrow(data)] <- 0
         yaxt = 'n'
     }
- 
+
     if (smooth)
         data[,1] = lowess(data[,1] ~ time(data))$y
- 
+
     plot(
         data, type='p', pch='.',
         major.format='%H:%M',
@@ -63,7 +63,7 @@ plot_track <- function(data) {
     text(0.5, 0.5, title, cex=1.5, font=2)
 
     col = ifelse(c(0, diff(as.numeric(data$z))) > 0, 'green', 'black')
- 
+
     par(mar=c(0, 4, 0.5, 2) + 0.1)
     plot_data(data[, 'speed'], ylab='Speed [km/h]', col=col, xaxt='n')
     par(mar=c(4, 4, 0.5, 2) + 0.1)
@@ -76,19 +76,28 @@ select t.start, t.trip, t.name, timestamp, st_z(location) as z, speed
 from track t
     inner join position p on t.device = p.device
         and p.timestamp between t.start and t.end
+where p.device = ?device and t.trip || ' ' || t.name ~* ?query
 "
 
 args = commandArgs(trailingOnly=TRUE)
-output = args[1]
+
+if (length(args) == 2)
+    query = args[1]
+    output = args[2]
+} else {
+    cat('Usage:\n    plot-track.R [query] output\n', file=stderr())
+    quit('no', 1)
+}
 
 drv = dbDriver('PostgreSQL')
 conn = dbConnect(drv, dbname='antrak')
-data = dbGetQuery(conn, QUERY)
- 
+sql = sqlInterpolate(ANSI(), QUERY, device='default', query=query)
+data = dbGetQuery(conn, sql)
+
 pdf(output)
 par(mar=c(2, 4, 4, 2) + 0.1)
 layout(matrix(c(1, 2, 3), ncol=1), heights=c(.06, .47, .47))
 n = group_by(data, start, trip, name) %>% do(plot_track(.))
 dev.off()
- 
+
 # vim: sw=4:et:ai
