@@ -21,7 +21,7 @@ from antrak.dao import report as report_dao
 from antrak.db import tx
 from datetime import timedelta
 
-FMT_TRACK_STATS = ' {:%Y-%m-%d} {:%H:%M:%S} {:%H:%M:%S}  {:30}  {}  {} km  {} km/h'.format
+FMT_TRACK_STATS = ' {:%Y-%m-%d} {:%H:%M:%S} {:%H:%M:%S}  {:30}  {}  {:4} km {:4} km/h'.format
 
 async def track_stats(dev, query):
     data = await report_dao.track_summary(dev, query)
