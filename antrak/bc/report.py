@@ -17,21 +17,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import itertools
+import operator
+from datetime import timedelta
+
 from antrak.dao import report as report_dao
 from antrak.db import tx
-from datetime import timedelta
 
 FMT_TRACK_STATS = ' {:%Y-%m-%d} {:%H:%M:%S} {:%H:%M:%S}  {:30}  {}  {:4} km {:4} km/h'.format
 
 async def track_stats(dev, query):
     data = await report_dao.track_summary(dev, query)
-    data = iter(data)
+    data = itertools.groupby(data, operator.itemgetter('trip'))
 
-    item = next(data)
-    print(item['trip'])
-    print_track(item)
-    for item in data:
-        print_track(item)
+    for trip, items in data:
+        print(trip)
+        for item in items:
+            print_track(item)
 
 def print_track(item):
     duration = timedelta(seconds=item['duration'])
