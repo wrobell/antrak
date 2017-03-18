@@ -17,6 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import itertools
+from toolz.itertoolz import sliding_window
+
 from antrak.dao import track as track_dao
 from antrak.db import tx
 from antrak.nmea import parse_pos
@@ -40,11 +43,23 @@ def filter_quality(positions):
             and p.properties['pdop'] < 5
     )
 
+def check_altitude_speed(p1, p2):
+    td = abs(p2.properties['timestamp'] - p1.properties['timestamp']).total_seconds()
+    # TODO: make time difference and altitude speed limits configurable
+    return td >= 10 or abs(p2.z - p1.z) / td < 10
+
+def filter_altitude_speed(positions):
+    return (
+        p1 for p1, p2 in sliding_window(2, positions)
+        if check_altitude_speed(p2, p1)
+    )
+
 @tx
 def save_pos(dev, files):
     positions = flatten(parse_pos(open(fn)) for fn in files)
     positions = (p for p in positions if p)
     positions = filter_quality(positions)
+    positions = filter_altitude_speed(positions)
     return track_dao.save_pos(dev, positions)
 
 @tx
