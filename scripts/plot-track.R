@@ -23,7 +23,12 @@ library(dplyr)
 library(RPostgreSQL)
 library(xts)
 
-plot_data <- function(data, lab, smooth=F, ...) {
+plot_track <- function(track, smooth=F, ...) {
+    data = track$data
+
+    # TODO: show altitude change
+    # col = ifelse(c(0, diff(data$z)) > 0, 'green', 'black')
+
     yaxt = NULL
     if (all(is.na(data))) {
         data[,1][1] <- 0
@@ -31,44 +36,45 @@ plot_data <- function(data, lab, smooth=F, ...) {
         yaxt = 'n'
     }
 
-    if (smooth)
-        data[,1] = lowess(data[,1] ~ time(data))$y
+    if (smooth) {
+        data[, 'seed'] = lowess(data[, 'speed'] ~ time(data))$y
+        data[, 'z'] = lowess(data[, 'z'] ~ time(data))$y
+    }
 
-    plot(
+    names(data) <- c('Speed', 'Altitude')
+    p = plot(
         data, type='p', pch='.',
-        major.format='%H:%M',
+        grid.ticks.on='hours',
+        format.labels='%H:%M',
         major.ticks='hours', minor.ticks=F,
-        main=NULL,
-        mgp=c(2, 0.75, 0),
+        multi.panel=T,
+        yaxis.right=F,
+        yaxis.same=F,
+        col='black',
+        main=track$title,
+        ylab=c('a', 'b'),
         ...
     )
     if (!is.null(yaxt)) {
         text(mean(range(time(data))), 0, 'no data')
     }
+    print(p)
 }
 
-plot_track <- function(data) {
-    cols = names(data)
-    data = xts(data[, cols], order.by=data$timestamp)
-
-    tdata = data[1]
+track_info <- function(data) {
+    tdata = data[1,]
     title = sprintf(
         '%s: %s - %s',
-        strftime(time(tdata)[1], '%Y-%m-%d'),
+        strftime(tdata$start, '%Y-%m-%d'),
         tdata$trip,
         tdata$name
     )
-    par(mar=rep(0, 4))
-    plot.new()
-    text(0.5, 0.5, title, cex=1.5, font=2)
 
-    col = ifelse(c(0, diff(as.numeric(data$z))) > 0, 'green', 'black')
-
-    par(mar=c(0, 4, 0.5, 2) + 0.1)
-    plot_data(data[, 'speed'], ylab='Speed [km/h]', col=col, xaxt='n')
-    par(mar=c(4, 4, 0.5, 2) + 0.1)
-    plot_data(data[, 'z'], ylab='Altitude [m]', col=col, xlab='Time')
-    data.frame()
+    cols = c('speed', 'z')
+    list(
+        title=title,
+        data=xts(data[, cols], order.by=data$timestamp)
+    )
 }
 
 QUERY = "
@@ -94,10 +100,12 @@ conn = dbConnect(drv, dbname='antrak')
 sql = sqlInterpolate(ANSI(), QUERY, device='default', query=query)
 data = dbGetQuery(conn, sql)
 
+tracks = group_by(data, start, trip, name) %>% do(data=track_info(.)) %>% select(data)
+
 pdf(output)
-par(mar=c(2, 4, 4, 2) + 0.1)
-layout(matrix(c(1, 2, 3), ncol=1), heights=c(.06, .47, .47))
-n = group_by(data, start, trip, name) %>% do(plot_track(.))
+for (track in tracks[[1]]) {
+    plot_track(track)
+}
 dev.off()
 
 # vim: sw=4:et:ai
