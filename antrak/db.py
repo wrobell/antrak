@@ -62,7 +62,7 @@ class TxManager:
                     self.conn = await asyncpg.connect(self.dsn)
                     await self.conn.set_type_codec(
                         'geometry', encoder=to_wkb, decoder=from_wkb,
-                        format'binary'
+                        format='binary'
                     )
                 else:
                     logger.debug('reusing db connection')
