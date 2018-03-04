@@ -37,7 +37,7 @@ plot_track <- function(track, smooth=F, ...) {
     }
 
     if (smooth) {
-        data[, 'seed'] = lowess(data[, 'speed'] ~ time(data))$y
+        data[, 'speed'] = lowess(data[, 'speed'] ~ time(data))$y
         data[, 'z'] = lowess(data[, 'z'] ~ time(data))$y
     }
 
