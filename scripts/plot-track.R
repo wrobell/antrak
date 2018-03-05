@@ -100,7 +100,11 @@ conn = dbConnect(drv, dbname='antrak')
 sql = sqlInterpolate(ANSI(), QUERY, device='default', query=query)
 data = dbGetQuery(conn, sql)
 
-tracks = group_by(data, start, trip, name) %>% do(data=track_info(.)) %>% select(data)
+tracks = (
+    group_by(data, start, trip, name)
+    %>% do(data=track_info(.))
+    %>% select(data)
+)
 
 pdf(output)
 for (track in tracks[[1]]) {
