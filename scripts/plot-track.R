@@ -33,7 +33,7 @@ from track t
 where p.device = ?device and t.trip || ' ' || t.name ~* ?query
 "
 
-plot_track <- function(track, smooth=F, ...) {
+plot_track <- function(track, ...) {
     data = track$data
     data.mean = rollmean(data[, 'speed'], ROLL_MEAN)
 
@@ -45,11 +45,6 @@ plot_track <- function(track, smooth=F, ...) {
         data[,1][1] <- 0
         data[,1][nrow(data)] <- 0
         yaxt = 'n'
-    }
-
-    if (smooth) {
-        data[, 'speed'] = lowess(data[, 'speed'] ~ time(data))$y
-        data[, 'z'] = lowess(data[, 'z'] ~ time(data))$y
     }
 
     names(data) <- c('Speed', 'Altitude')
