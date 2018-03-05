@@ -33,7 +33,8 @@ from track t
 where p.device = ?device and t.trip || ' ' || t.name ~* ?query
 "
 
-plot_track <- function(track, ...) {
+plot_track <- function(data, ...) {
+    track = data$data
     data = track$data
     data.mean = track$data.mean
 
@@ -104,15 +105,15 @@ conn = dbConnect(drv, dbname='antrak')
 sql = sqlInterpolate(ANSI(), QUERY, device='default', query=query)
 data = dbGetQuery(conn, sql)
 
-tracks = (
+pdf(output)
+plots = (
     group_by(data, start, trip, name)
     %>% do(data=track_data(.))
+    %>% do(data=plot_track(.))
     %>% select(data)
 )
 
-pdf(output)
-for (track in tracks[[1]]) {
-    p = plot_track(track)
+for (p in plots[[1]]) {
     print(p)
 }
 dev.off()
