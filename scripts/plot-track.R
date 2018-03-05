@@ -2,7 +2,7 @@
 #
 # AnTrak - Activity and location data analysis
 #
-# Copyright (C) 2017 by Artur Wroblewski <wrobell@riseup.net>
+# Copyright (C) 2017-2018 by Artur Wroblewski <wrobell@riseup.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
