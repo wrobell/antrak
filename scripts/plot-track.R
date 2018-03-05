@@ -63,7 +63,7 @@ plot_track <- function(track, smooth=F, ...) {
     if (!is.null(yaxt)) {
         text(mean(range(time(data))), 0, 'no data')
     }
-    print(p)
+    p
 }
 
 track_info <- function(data) {
@@ -109,7 +109,8 @@ tracks = group_by(data, start, trip, name) %>% do(data=track_info(.)) %>% select
 
 pdf(output)
 for (track in tracks[[1]]) {
-    plot_track(track)
+    p = plot_track(track)
+    print(p)
 }
 dev.off()
 
