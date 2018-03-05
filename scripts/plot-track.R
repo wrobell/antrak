@@ -35,7 +35,7 @@ where p.device = ?device and t.trip || ' ' || t.name ~* ?query
 
 plot_track <- function(track, ...) {
     data = track$data
-    data.mean = rollmean(data[, 'speed'], ROLL_MEAN)
+    data.mean = track$data.mean
 
     # TODO: show altitude change
     # col = ifelse(c(0, diff(data$z)) > 0, 'green', 'black')
@@ -69,7 +69,7 @@ plot_track <- function(track, ...) {
     p
 }
 
-track_info <- function(data) {
+track_data <- function(data) {
     tdata = data[1,]
     title = sprintf(
         '%s: %s - %s',
@@ -79,9 +79,13 @@ track_info <- function(data) {
     )
 
     cols = c('speed', 'z')
+
+    data = xts(data[, cols], order.by=data$timestamp)
+    data.mean = rollmean(data[, 'speed'], ROLL_MEAN)
     list(
         title=title,
-        data=xts(data[, cols], order.by=data$timestamp)
+        data=data,
+        data.mean=data.mean
     )
 }
 
@@ -102,7 +106,7 @@ data = dbGetQuery(conn, sql)
 
 tracks = (
     group_by(data, start, trip, name)
-    %>% do(data=track_info(.))
+    %>% do(data=track_data(.))
     %>% select(data)
 )
 
