@@ -25,6 +25,14 @@ library(xts)
 
 ROLL_MEAN = 60 * 60
 
+QUERY = "
+select t.start, t.trip, t.name, timestamp, st_z(location) as z, speed
+from track t
+    inner join position p on t.device = p.device
+        and p.timestamp between t.start and t.end
+where p.device = ?device and t.trip || ' ' || t.name ~* ?query
+"
+
 plot_track <- function(track, smooth=F, ...) {
     data = track$data
     data.mean = rollmean(data[, 'speed'], ROLL_MEAN)
@@ -81,14 +89,6 @@ track_info <- function(data) {
         data=xts(data[, cols], order.by=data$timestamp)
     )
 }
-
-QUERY = "
-select t.start, t.trip, t.name, timestamp, st_z(location) as z, speed
-from track t
-    inner join position p on t.device = p.device
-        and p.timestamp between t.start and t.end
-where p.device = ?device and t.trip || ' ' || t.name ~* ?query
-"
 
 args = commandArgs(trailingOnly=TRUE)
 
