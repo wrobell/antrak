@@ -27,6 +27,7 @@ ROLL_MEAN = 60 * 60
 
 plot_track <- function(track, smooth=F, ...) {
     data = track$data
+    data.mean = rollmean(data[, 'speed'], ROLL_MEAN)
 
     # TODO: show altitude change
     # col = ifelse(c(0, diff(data$z)) > 0, 'green', 'black')
@@ -42,7 +43,6 @@ plot_track <- function(track, smooth=F, ...) {
         data[, 'speed'] = lowess(data[, 'speed'] ~ time(data))$y
         data[, 'z'] = lowess(data[, 'z'] ~ time(data))$y
     }
-    data.mean = rollmean(data[, 'speed'], ROLL_MEAN)
 
     names(data) <- c('Speed', 'Altitude')
     p = plot(
