@@ -71,7 +71,7 @@ plot_track <- function(data, ...) {
 }
 
 track_data <- function(data) {
-    tdata = data[1,]
+    tdata = first(data)  # create title based on first row data
     title = sprintf(
         '%s: %s - %s',
         strftime(tdata$start, '%Y-%m-%d'),
