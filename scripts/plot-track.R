@@ -105,17 +105,15 @@ conn = dbConnect(drv, dbname='antrak')
 sql = sqlInterpolate(ANSI(), QUERY, device='default', query=query)
 data = dbGetQuery(conn, sql)
 
-pdf(output)
 plots = (
     group_by(data, start, trip, name)
     %>% do(data=track_data(.))
     %>% do(data=plot_track(.))
-    %>% select(data)
 )
 
-for (p in plots[[1]]) {
+pdf(output)
+for (p in plots[[1]])
     print(p)
-}
 dev.off()
 
 # vim: sw=4:et:ai
