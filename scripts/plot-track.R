@@ -23,6 +23,8 @@ library(dplyr)
 library(RPostgreSQL)
 library(xts)
 
+ROLL_MEAN = 60 * 60
+
 plot_track <- function(track, smooth=F, ...) {
     data = track$data
 
@@ -40,6 +42,7 @@ plot_track <- function(track, smooth=F, ...) {
         data[, 'speed'] = lowess(data[, 'speed'] ~ time(data))$y
         data[, 'z'] = lowess(data[, 'z'] ~ time(data))$y
     }
+    data.mean = rollmean(data[, 'speed'], ROLL_MEAN)
 
     names(data) <- c('Speed', 'Altitude')
     p = plot(
@@ -55,6 +58,8 @@ plot_track <- function(track, smooth=F, ...) {
         ylab=c('a', 'b'),
         ...
     )
+    addSeries(data.mean, type='l', col='orange', on=1)
+
     if (!is.null(yaxt)) {
         text(mean(range(time(data))), 0, 'no data')
     }
