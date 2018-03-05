@@ -33,8 +33,7 @@ from track t
 where p.device = ?device and t.trip || ' ' || t.name ~* ?query
 "
 
-plot_track <- function(data, ...) {
-    track = data$data
+track_plot <- function(track, ...) {
     data = track$data
     data.mean = track$data.mean
 
@@ -108,11 +107,11 @@ data = dbGetQuery(conn, sql)
 plots = (
     group_by(data, start, trip, name)
     %>% do(data=track_data(.))
-    %>% do(data=plot_track(.))
+    %>% do(data=track_plot(.$data))
 )
 
 pdf(output)
-for (p in plots[[1]])
+for (p in plots$data)
     print(p)
 dev.off()
 
