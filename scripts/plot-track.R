@@ -23,7 +23,8 @@ library(dplyr)
 library(RPostgreSQL)
 library(xts)
 
-ROLL_MEAN = 60 * 60
+# set to 1h, so current rolling average shows how many kilometers travelled
+SPEED_RM_WIDTH = 60 * 60
 
 QUERY = "
 select t.start, t.trip, t.name, timestamp, st_z(location) as z, speed
@@ -40,13 +41,6 @@ track_plot <- function(track, ...) {
     # TODO: show altitude change
     # col = ifelse(c(0, diff(data$z)) > 0, 'green', 'black')
 
-    yaxt = NULL
-    if (all(is.na(data))) {
-        data[,1][1] <- 0
-        data[,1][nrow(data)] <- 0
-        yaxt = 'n'
-    }
-
     names(data) <- c('Speed', 'Altitude')
     p = plot(
         data, type='p', pch='.',
@@ -62,9 +56,6 @@ track_plot <- function(track, ...) {
     )
     addSeries(data.mean, type='l', col='orange', on=1)
 
-    if (!is.null(yaxt)) {
-        text(mean(range(time(data))), 0, 'no data')
-    }
     p
 }
 
@@ -80,7 +71,7 @@ track_data <- function(data) {
     cols = c('speed', 'z')
 
     data = xts(data[, cols], order.by=data$timestamp)
-    data.mean = rollmean(data[, 'speed'], ROLL_MEAN)
+    data.mean = rollmean(data[, 'speed'], SPEED_RM_WIDTH)
     list(
         title=title,
         data=data,
