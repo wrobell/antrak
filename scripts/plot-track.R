@@ -58,7 +58,6 @@ track_plot <- function(track, ...) {
         yaxis.same=F,
         col='black',
         main=track$title,
-        ylab=c('a', 'b'),
         ...
     )
     addSeries(data.mean, type='l', col='orange', on=1)
