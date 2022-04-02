@@ -24,29 +24,51 @@ library(RPostgreSQL)
 library(xts)
 
 # set to 1h, so current rolling average shows how many kilometers travelled
-SPEED_RM_WIDTH = 60 * 60
+SPEED_RM_WIDTH_MIN = 60
+SPEED_RM_WIDTH_HOUR = SPEED_RM_WIDTH_MIN * SPEED_RM_WIDTH_MIN
 
 QUERY = "
-select t.start, t.trip, t.name, timestamp, st_z(location) as z, speed
-from track t
-    inner join position p on t.device = p.device
-        and p.timestamp between t.start and t.end
-where p.device = ?device and t.trip || ' ' || t.name ~* ?query
+select
+    start,
+    trip,
+    name,
+    timestamp,
+    z,
+    speed,
+    sum(st_distance(st_transform(p1, 3857), st_transform(p2, 3857))) over (order by timestamp) as distance
+from (
+    select
+        t.start,
+        t.trip,
+        t.name,
+        timestamp,
+        st_z(location) as z,
+        speed,
+        location as p1,
+        lag(location) over (order by timestamp) as p2
+    from track t
+        inner join position p on t.device = p.device
+            and p.timestamp between t.start and t.end
+    where p.device = ?device and t.trip || ' ' || t.name ~* ?query
+) t
+order by timestamp
 "
 
 track_plot <- function(track, ...) {
     data = track$data
     data.mean = track$data.mean
+    data.dist = track$data.dist
 
     # TODO: show altitude change
     # col = ifelse(c(0, diff(data$z)) > 0, 'green', 'black')
 
     names(data) <- c('Speed', 'Altitude')
     p = plot(
-        data, type='p', pch='.',
-        grid.ticks.on='hours',
+        data[, c('Speed', 'Altitude')], type='p', pch='.',
+        grid.ticks.on='minutes',
         format.labels='%H:%M',
-        major.ticks='hours', minor.ticks=F,
+        major.ticks='minutes',
+        minor.ticks=F,
         multi.panel=T,
         yaxis.right=F,
         yaxis.same=F,
@@ -55,7 +77,7 @@ track_plot <- function(track, ...) {
         ...
     )
     addSeries(data.mean, type='l', col='orange', on=1)
-
+    addEventLines(data.dist, cex=1.1, adj=c(0, 1.5), srt=270, col='red', font=2)
     p
 }
 
@@ -70,12 +92,26 @@ track_data <- function(data) {
 
     cols = c('speed', 'z')
 
-    data = xts(data[, cols], order.by=data$timestamp)
-    data.mean = rollmean(data[, 'speed'], SPEED_RM_WIDTH)
+    # if no more than 2h of data, then rolling average using minutes
+    # instead of hours
+    mean_width = ifelse(
+        length(data) <= SPEED_RM_WIDTH_HOUR * 2,
+        SPEED_RM_WIDTH_MIN,
+        SPEED_RM_WIDTH_HOUR
+    )
+    data.ts = xts(data[, cols], order.by=data$timestamp)
+    data.mean = rollmean(data.ts[, 'speed'], mean_width)
+
+    data$cat_distance = cut(data$distance, seq(0, max(data$distance, na.rm=T), 200))
+    data.dist = aggregate(data, list(data$cat_distance), last)
+    data.dist$distance = sprintf('%.0f m', data.dist$distance)
+    data.dist = xts(data.dist[, 'distance'], order.by=data.dist$timestamp)
+
     list(
         title=title,
-        data=data,
-        data.mean=data.mean
+        data=data.ts,
+        data.mean=data.mean,
+        data.dist=data.dist
     )
 }
 
