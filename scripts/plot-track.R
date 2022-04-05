@@ -35,7 +35,7 @@ select
     timestamp,
     z,
     speed,
-    sum(st_distance(st_transform(p1, 3857), st_transform(p2, 3857))) over (order by timestamp) as distance
+    sum(st_distancesphere(p1, p2)) over (order by timestamp) as distance
 from (
     select
         t.start,
